@@ -63,7 +63,9 @@ function axios(config: AxiosRequestConfig){
 }
 export default axios 
 ```
-实现请求逻辑（使用模块化编程），在src下新建一个`logic（逻辑）`文件夹并创建`xhr.ts`文件
+#### 实现请求逻辑（使用模块化编程），利用XMLHttpRequest发送请求
+****
+在src下新建一个`logic（逻辑）`文件夹并创建`xhr.ts`文件
 ```
 # src/logic/xhr.ts
 
@@ -91,5 +93,20 @@ function axios(config: AxiosRequestConfig):void {
 }
 
 export default axios
+```
+#### 编写Demo
+****
+```
+安装相关依赖
+webpack     # 打包构建工具
+webpack-dev-middleware      # express web中间件
+webpack-hot-middleware      # express webpack中间件
+ts-loader       # webpack 需要的相关ts的loader
+tslint-loader       # webpack 需要的相关ts的loader
+express     # nodeJs服务端框架
+body-parser     # 中间件
+
+
+examples文件 -> 多入口模式
 ```
 
