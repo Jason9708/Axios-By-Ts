@@ -110,3 +110,57 @@ body-parser     # 中间件
 examples文件 -> 多入口模式
 ```
 
+## 基础功能实现
+#### 需求分析
+****
+我们希望最终请求的url后面带上我们请求是的params，例如`/xxx/xxx?a=?&b=?`,这样服务端就能通过请求的url解析到我们传来的参数数据了，实际上就是把params对象的key和value拼接到`url`上
+```
+参数值为数组
+axios({
+    method:'get',
+    url:'/base/get',
+    params:{
+        foo:['bar','baz']
+    }
+})
+最终请求的url是：`/base/get?foo[]=bar&foo[]=baz`
+```
+同时我们也要支持参数是对象、Date、特殊字符的情况，以及空格忽略，丢弃url中的hash标记，保留url中已存在的参数
+
+> 在scr下建立helper文件夹，存放我们所有辅助函数，工具方法（url.ts、utils.ts)
+
+#### 处理请求url参数
+****
+src/helper/url.ts存放url相关辅助函数，在里面对url进行处理
+src/helper/utils.ts存放工具辅助函数，例如类型判断等···
+
+具体代码实现可浏览文件
+
+#### url参数处理逻辑
+****
+```
+修改src/index.ts
+
+import { AxiosRequestConfig } from './types'
+import xhr from './logic/xhr'
+import { bulidURL } from './helper/url'
+
+function axios(config: AxiosRequestConfig):void {
+    processConfig(config)
+    xhr(config)
+}
+
+function processConfig(config: AxiosRequestConfig): void {
+    config.url = transURL(config)
+}
+// 对config.url做处理
+function transURL(config: AxiosRequestConfig): string {
+    const { url, params } = config
+    return bulidURL(url,params)
+}
+
+export default axios
+```
+#### exampls - base 编写
+****
+用于测试我们需求是否实现的DEMO

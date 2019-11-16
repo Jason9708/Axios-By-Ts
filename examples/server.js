@@ -27,11 +27,23 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 const router = express.Router()
 
-router.get('/simple/get', function(req, res) {
-    res.json({
-        msg: `Hello world`
+registerSimpleRouter()
+
+registerBaseRouter()
+
+function registerSimpleRouter() {
+    router.get('/simple/get', function(req, res) {
+        res.json({
+            msg: `hello world`
+        })
     })
-})
+}
+
+function registerBaseRouter() {
+    router.get('/base/get', function(req, res) {
+        res.json(req.query)
+    })
+}
 
 app.use(router)
 
