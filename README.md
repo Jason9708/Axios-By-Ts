@@ -111,8 +111,9 @@ examples文件 -> 多入口模式
 ```
 
 ## 基础功能实现
-#### 需求分析
+#### 处理请求url参数
 ****
+##### 需求分析
 我们希望最终请求的url后面带上我们请求是的params，例如`/xxx/xxx?a=?&b=?`,这样服务端就能通过请求的url解析到我们传来的参数数据了，实际上就是把params对象的key和value拼接到`url`上
 ```
 参数值为数组
@@ -128,16 +129,12 @@ axios({
 同时我们也要支持参数是对象、Date、特殊字符的情况，以及空格忽略，丢弃url中的hash标记，保留url中已存在的参数
 
 > 在scr下建立helper文件夹，存放我们所有辅助函数，工具方法（url.ts、utils.ts)
-
-#### 处理请求url参数
-****
 src/helper/url.ts存放url相关辅助函数，在里面对url进行处理
 src/helper/utils.ts存放工具辅助函数，例如类型判断等···
 
 具体代码实现可浏览文件
 
-#### url参数处理逻辑
-****
+##### url参数处理逻辑
 ```
 修改src/index.ts
 
@@ -161,6 +158,107 @@ function transURL(config: AxiosRequestConfig): string {
 
 export default axios
 ```
-#### exampls - base 编写
-****
+##### exampls - base 编写
+
 用于测试我们需求是否实现的DEMO
+
+#### 处理请求body
+****
+##### 需求分析
+我们通过执行`XMLHttpRequest`对象实例的`send`方法来发送请求，并通过该方法的参数设置请求`body`数据
+`send`方法的参数支持`Document`和`BodyInit`类型，`BodyInit`类型包含了`Blob`,`BufferSource`,`FormData`,`URLSearchParams`,`ReadableStream`,`USVString`,当没有数据的时候，我们还可以传入`null`
+
+```
+axios({
+    method:'post',
+    url:'/base/post',
+    data:{
+        a:1,
+        b:2
+    }
+})
+```
+上面我们最常用的常见，传一个普通对象给服务端，但由于send函数不能直接接受这样普通对象的参数，所以我们需要把它**转换成JSON数据** （src/helper/data.ts)
+
+##### data转换成JSON数据
+我们要明确一点，send()接受哪一些参数，不接受哪一些参数，Blob、FormData等一些特殊对象是被send所接受的，所以我们不应该去处理所有的对象，我们只需要对普通对象进行转换
+```
+修改src/helper/utils.ts
+
+const toString = Object.prototype.toString
+
+// 类型判断工具
+export function isDate(val: any): val is Date{
+    return toString.call(val) === '[object Date]'
+}
+export function isObject(val: any): val is Object{
+    return val !== null && typeof val === 'object'
+}
+export function isPlainObject(val: any): val is Object {
+    // 判断普通对象
+    return toString.call(val) === '[object Object]'
+}
+```
+```
+src/helper/data.ts
+
+import { isPlainObject} from './utils'
+
+export function transRequest(data: any): any {
+    // 判断普通对象（不包含Blob，formData之类） 对普通对象进行转换
+    if(isPlainObject(data)) {
+        return JSON.stringify(data)
+    }else{
+        return data
+    }
+}
+```
+```
+修改src/index.ts
+
+import { AxiosRequestConfig } from './types'
+import xhr from './logic/xhr'
+import { bulidURL } from './helper/url'
+import { transRequest } from './helper/data'
+
+function axios(config: AxiosRequestConfig):void {
+    processConfig(config)
+    xhr(config)
+}
+
+function processConfig(config: AxiosRequestConfig): void {
+    config.url = transURL(config)
+    config.data = transRequestData(config)
+}
+
+// 对config.url做处理
+function transURL(config: AxiosRequestConfig): string {
+    const { url, params } = config
+    return bulidURL(url,params)
+}
+// 对config.data做处理
+function transRequestData(config: AxiosRequestConfig): any {
+    return transRequest(config.data)
+}
+
+export default axios
+```
+#### 处理请求header
+****
+axios发生请求的时候可以传入headers对象，多数情况用于规定请求的contentType，如下
+```
+axios({
+    method:'post',
+    url:'/base/post',
+    headers:{
+        'content-Type':'application/json;charset=utf-8'
+    },
+    data:{
+        a:1,
+        b:2
+    }
+})
+```
+既然如此，我们就需要扩展我们之前`types/index.ts`以及`logic/xhr.ts`
+
+##### 实现processHeaders函数实现，对headers做加工

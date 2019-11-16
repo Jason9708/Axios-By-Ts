@@ -8,6 +8,7 @@ export type METHOD = 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'op
 export interface AxiosRequestConfig{
     url: string,
     method?: METHOD,
+    headers?: any,
     data?: any,
     params?: any
 }

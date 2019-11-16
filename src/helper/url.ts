@@ -5,13 +5,18 @@
 
 // 编码
 function encode(val: string): string {
-    return encodeURIComponent(val).replace(/%40/g,'@').replace(/%3A/ig,':')
-        .replace(/%24/g,'$').replace(/%2C/ig,',').replace(/%20/g,'+')
-        .replace(/%5B/ig,'[').replace(/%5D/ig,']')
+    return encodeURIComponent(val)
+        .replace(/%40/g, '@')
+        .replace(/%3A/gi, ':')
+        .replace(/%24/g, '$')
+        .replace(/%2C/gi, ',')
+        .replace(/%20/g, '+')
+        .replace(/%5B/gi, '[')
+        .replace(/%5D/gi, ']')
 }
 
 
-import { isDate, isObject} from './utils'
+import { isDate, isPlainObject} from './utils'
 
 export function bulidURL(url: string, params?: any){
     if(!params) return url
@@ -40,7 +45,7 @@ export function bulidURL(url: string, params?: any){
             // 判断val类型
             if(isDate(val)){
                 val = val.toISOString()
-            }else if(isObject(val)){
+            }else if(isPlainObject(val)){
                 val = JSON.stringify(val)
             }
             bulitArr.push(`${encode(key)}=${encode(val)}`)
