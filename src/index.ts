@@ -1,12 +1,14 @@
-import { AxiosRequestConfig } from './types'
+import { AxiosRequestConfig,AxiosPromise, AxiosResponse } from './types'
 import xhr from './logic/xhr'
 import { bulidURL } from './helper/url'
-import { transRequest } from './helper/data'
+import { transRequest, transData } from './helper/data'
 import { processHeaders } from './helper/headers'
 
-function axios(config: AxiosRequestConfig):void {
+function axios(config: AxiosRequestConfig):AxiosPromise {
     processConfig(config)
-    xhr(config)
+    return xhr(config).then((res)=>{
+        return transResponseData(res)
+    })
 }
 
 function processConfig(config: AxiosRequestConfig): void {
@@ -29,6 +31,11 @@ function transRequestData(config: AxiosRequestConfig): any {
 function transHeaders(config: AxiosRequestConfig): any {
     const { headers = {}, data } = config
     return processHeaders(headers,data)
+}
+// 对响应数据data做处理
+function transResponseData( response: AxiosResponse): AxiosResponse{
+    response.data = transData(response.data)
+    return response
 }
 
 

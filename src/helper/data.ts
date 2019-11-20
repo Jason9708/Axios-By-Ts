@@ -12,3 +12,15 @@ export function transRequest(data: any): any {
         return data
     }
 }
+
+export function transData(data: any): any{
+    if(typeof data === 'string'){
+        try{
+            data = JSON.parse(data)
+        }catch(e){
+            console.log('转化失败 இ௰இ',e)
+        }
+    }
+
+    return data
+}

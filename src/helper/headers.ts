@@ -29,3 +29,28 @@ export function processHeaders(headers: any,data: any): any {
 
     return headers
 }
+
+
+export function transHeaders(headers: string): any{
+    let result = Object.create(null)
+    if(!headers){
+        return result
+    }
+    // 以回车符换行符隔开每一个header行
+    headers.split('\r\n').forEach( header => {
+        // 以':'作为key和value的分割符
+        let [key, value] = header.split(':') 
+        key = key.trim().toLocaleLowerCase()
+        if(!key){
+            // 若key是空的 直接进行下一次循环，否则再去判断value
+            return
+        }
+        if(value){
+            value = value.trim()
+        }
+        // 赋给result
+        result[key] = value
+    })
+
+    return result
+}

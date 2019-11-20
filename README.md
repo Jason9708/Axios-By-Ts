@@ -262,3 +262,180 @@ axios({
 既然如此，我们就需要扩展我们之前`types/index.ts`以及`logic/xhr.ts`
 
 ##### 实现processHeaders函数实现，对headers做加工
+```
+/**
+ *  对headers进行加工
+*/
+
+import { isPlainObject } from './utils'
+
+// 防止 content-type 与 Content-Type 不匹配
+function normalizeHeaderName(headers: any,normalizedName: string): void {
+    if(!headers){
+        return
+    }
+    Object.keys(headers).forEach( name => {
+        if(name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()){
+            headers[normalizedName] = headers[name]
+            delete headers[name]
+        }
+    })
+}
+
+export function processHeaders(headers: any,data: any): any {
+    normalizeHeaderName(headers,'Content-Type')
+
+    //当data是普通对象时，添加contentType
+    if(isPlainObject(data)){
+        if(headers && !headers['Content-Type']){
+            headers['Content-Type'] = 'application/json;charset=utf-8'
+        }
+    }
+
+    return headers
+}
+```
+
+#### 获取响应数据
+****
+##### 需求分析
+处理服务端响应的数据，并支持Promise链式调用的方式，如下
+```
+axios({
+    methods:'post',
+    url:'/base/post',
+    data:{
+        a:1,
+        b:2
+    }
+}).then(res => {
+    console.log(res)
+})
+```
+我们可以拿到`res`对象，并且我们希望该对象包括：服务端返回的数据`data`，HTTP状态码`status`，状态消息`statusText`，响应头`headers`，请求配置对象`config`以及请求`XMLHttpRequest`对象实例`request`
+
+##### 定义接口类型
+```
+修改 types/index.ts
+
+export type METHOD = 'get' | 'GET' | 'delete' | 'DELETE' | 'head' | 'HEAD' | 'options' | 'OPTIONS' | 'post' | 'POST' | 'put' | 'PUT' | 'patch' | 'PATCH' 
+
+export interface AxiosRequestConfig{
+    url: string,
+    method?: METHOD,
+    headers?: any,
+    data?: any,
+    params?: any,
++   responseType?: XMLHttpRequestResponseType
+}
+
+
+// 响应数据类型
++ export interface AxiosResponse {
++    data:any,
++    status:number,
++    statusText:string,
++    headers:any,
++    config:AxiosRequestConfig,
++    request:any
++ }
+
+// 返回一个Promise对象  继承于泛型接口
++ export interface AxiosPromise extends Promise<AxiosResponse>{}
+```
+```
+修改xhr.ts
+
+
+import { AxiosRequestConfig, AxiosResponse, AxiosPromise } from '../types'
+
+export default function xhr(config: AxiosRequestConfig): AxiosPromise {
+    return new Promise( (resolve) => {
+        // data默认为null，methods默认为get
+        const { data = null, url, method = 'get', headers, responseType } = config
+
+        const request = new XMLHttpRequest()
+
+        if(responseType){
+            request.responseType = responseType
+        }
+
+        request.open(method.toUpperCase(), url, true)
+
+        request.onreadystatechange = function handleRequest(){
+            if(request.readyState !== 4){
+                return
+            }
+            const responseHeaders = request.getAllResponseHeaders()
+            const responseData = responseType !== 'text' ? request.response : request.responseType
+            const response: AxiosResponse = {
+                data:responseData,
+                status:request.status,
+                statusText:request.statusText,
+                headers:responseHeaders,
+                config,
+                request
+            }
+            resolve(response)
+        }
+
+        // 设置headers
+        Object.keys(headers).forEach( name => {
+            // data是空的话，contentType是没有意义的
+            if(data === null && name.toLowerCase() === 'content-type'){
+                delete headers[name]
+            }else{
+                request.setRequestHeader(name,headers[name])
+            }
+        })
+
+        request.send(data)
+    })
+}
+```
+```
+修改 src/index.ts 添加
+
+import { AxiosRequestConfig,AxiosPromise } from './types'
+
+function axios(config: AxiosRequestConfig):AxiosPromise {
+    processConfig(config)
+    return xhr(config)
+}
+
+```
+##### 处理响应Header
+由于通过`getAllResponseHeaders`获取到的值是字符串形式，并且每一行会以回车符、换行符去隔开每一个`header`，所以我们需要把它转化为对象结构
+
+###### 实现一个transHeaders函数
+```
+修改 helper/headers 中添加
+
+export function transHeaders(headers: string): any{
+    let result = Object.create(null)
+    if(!headers){
+        return result
+    }
+    // 以回车符换行符隔开每一个header行
+    headers.split('\r\n').forEach( header => {
+        // 以':'作为key和value的分割符
+        let [key, value] = header.split(':') 
+        key = key.trim().toLocaleLowerCase()
+        if(!key){
+            // 若key是空的 直接进行下一次循环，否则再去判断value
+            return
+        }
+        if(value){
+            value = value.trim()
+        }
+        // 赋给result
+        result[key] = value
+    })
+
+    return result
+}
+```
+##### 处理响应的data
+当服务器端返回给我们的数据是字符串对象类型，我们需要将它转换为JSON对象
+
+###### 实现一个transData函数
