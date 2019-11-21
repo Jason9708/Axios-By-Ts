@@ -11,7 +11,8 @@ export interface AxiosRequestConfig{
     headers?: any,
     data?: any,
     params?: any,
-    responseType?: XMLHttpRequestResponseType
+    responseType?: XMLHttpRequestResponseType,
+    timeout?: number // 超时时间
 }
 
 
@@ -27,3 +28,12 @@ export interface AxiosResponse {
 
 // 返回一个Promise对象  继承于泛型接口
 export interface AxiosPromise extends Promise<AxiosResponse>{}
+
+// 异常请求类型
+export interface AxiosError extends Error {
+    config: AxiosRequestConfig
+    code?: string
+    request?: any
+    response?: AxiosResponse
+    isAxiosError: boolean
+}

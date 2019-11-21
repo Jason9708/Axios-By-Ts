@@ -439,3 +439,141 @@ export function transHeaders(headers: string): any{
 当服务器端返回给我们的数据是字符串对象类型，我们需要将它转换为JSON对象
 
 ###### 实现一个transData函数
+```
+修改 helper/data.ts
+
+export function transData(data: any): any{
+    if(typeof data === 'string'){
+        try{
+            data = JSON.parse(data)
+        }catch(e){
+            console.log('转化失败 இ௰இ',e)
+        }
+    }
+
+    return data
+}
+```
+```
+修改 src/index.ts
+
+function axios(config: AxiosRequestConfig):AxiosPromise {
+    processConfig(config)
+    return xhr(config).then((res)=>{
+        return transResponseData(res)
+    })
+}
+
+// 对响应数据data做处理
+function transResponseData( response: AxiosResponse): AxiosResponse{
+    response.data = transData(response.data)
+    return response
+}
+```
+### 错误处理
+****
+#### 处理网络异常错误
+```
+修改 logic/xhr.ts
+
+// 网络错误处理
+request.onerror = function handleError(){
+    reject(new Error('网络错误'))
+}
+```
+
+#### 处理超时错误
+```
+修改 types/index.ts
+
+export interface AxiosRequestConfig{
+    url: string,
+    method?: METHOD,
+    headers?: any,
+    data?: any,
+    params?: any,
+    responseType?: XMLHttpRequestResponseType,
++   timeout?: number // 超时时间
+}
+```
+```
+修改 logic/xhr.ts
+
+if(timeout){
+    request.timeout = timeout
+}
+request.ontimeout = function handleTimeout(){
+    reject(new Error(`${timeout}ms, request is timeout`))
+}
+```
+
+#### 非200处理
+```
+
+resolve(response)  → handleResponse(response)
+
+function handleResponse(response: AxiosResponse): void{
+    if(response.status >= 200 && response.status < 300){
+        resolve(response)
+    }else{
+        reject(new Error(`STATUS: ${response.status} ,request is failed`))
+    }
+}
+```
+
+### 错误信息细化
+****
+```
+修改 types/index.ts
+
+export interface AxiosError extends Error {
+    config: AxiosRequestConfig
+    code?: string
+    request?: any
+    response?: AxiosResponse
+    isAxiosError: boolean
+}
+```
+```
+新增 helper/error.ts
+
+import { AxiosRequestConfig,AxiosResponse } from "../types"
+
+export class AxiosError extends Error {
+    isAxiosError:boolean
+    config: AxiosRequestConfig
+    code?: string | null
+    request?: any
+    response?: AxiosResponse
+
+    constructor(
+        message: string,
+        config: AxiosRequestConfig,
+        code?: string | null,
+        request?: any,
+        response?: AxiosResponse
+      ) {
+        super(message)
+    
+        this.config = config
+        this.code = code
+        this.request = request
+        this.response = response
+        this.isAxiosError = true
+    
+        Object.setPrototypeOf(this, AxiosError.prototype)
+      }
+}
+
+// 工厂函数
+export function createError(
+    message: string,
+    config: AxiosRequestConfig,
+    code?: string | null,
+    request?: any,
+    response?: AxiosResponse
+): AxiosError {
+    const error = new AxiosError(message, config, code, request, response)
+    return error
+}
+```
