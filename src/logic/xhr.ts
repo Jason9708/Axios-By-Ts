@@ -4,6 +4,7 @@
 
 import { AxiosRequestConfig, AxiosResponse, AxiosPromise } from '../types'
 import { transHeaders } from '../helper/headers'
+import { createError } from '../helper/error'
 
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     return new Promise( (resolve,reject) => {
@@ -42,14 +43,14 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
 
         // 网络错误处理
         request.onerror = function handleError(){
-            reject(new Error('网络错误'))
+            reject(createError('Network Error',config,null,request))
         }
         // 请求超时处理 如果有规定超时时间，不传时XMLHttpRequest默认是0，意味着没有超时
         if(timeout){
             request.timeout = timeout
         }
         request.ontimeout = function handleTimeout(){
-            reject(new Error(`${timeout}ms, request is timeout`))
+            reject(createError(`${timeout}ms, request is timeout`,config,'ECONNABORTED',request))
         }
 
         // 设置headers
@@ -68,7 +69,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
             if(response.status >= 200 && response.status < 300){
                 resolve(response)
             }else{
-                reject(new Error(`STATUS: ${response.status} ,request is failed`))
+                reject(createError(`STATUS: ${response.status} ,request is failed`,config,null,request,response))
             }
         }
     })

@@ -577,3 +577,24 @@ export function createError(
     return error
 }
 ```
+```
+修改 logic/xhr.ts
+
+import { createError } from '../helper/error'
+
+// 网络错误处理
+request.onerror = function handleError(){
++   reject(createError('Network Error',config,null,request))
+}
+
+request.ontimeout = function handleTimeout(){
++   reject(createError(`${timeout}ms, request is timeout`,config,'ECONNABORTED',request))
+}
+function handleResponse(response: AxiosResponse): void{
+    if(response.status >= 200 && response.status < 300){
+        resolve(response)
+    }else{
++       reject(createError(`STATUS: ${response.status} ,request is failed`,config,null,request,response))
+    }
+}
+```

@@ -1,4 +1,5 @@
 import axios from '../../src/index'
+import { AxiosError } from '../../src/index'
 
 axios({
   method: 'get',
