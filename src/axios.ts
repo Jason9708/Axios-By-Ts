@@ -1,42 +1,16 @@
-import { AxiosRequestConfig,AxiosPromise, AxiosResponse } from './types'
-import xhr from './logic/xhr'
-import { bulidURL } from './helper/url'
-import { transRequest, transData } from './helper/data'
-import { processHeaders } from './helper/headers'
+import { AxiosInstance } from './types'
+import Axios from './core/Axios'
+import { extend } from './helper/utils'
+// 工厂类型， 创建一个axios实例，混合类型
+function createInstance(): AxiosInstance{
+    const context = new Axios()
+    const instance = Axios.prototype.request.bind(context)
 
-function axios(config: AxiosRequestConfig):AxiosPromise {
-    processConfig(config)
-    return xhr(config).then((res)=>{
-        return transResponseData(res)
-    })
-}
+    extend(instance, context)
 
-function processConfig(config: AxiosRequestConfig): void {
-    config.url = transURL(config)
-    config.headers = transHeaders(config) // headers的处理必须在data之前，先处理data的话，处理headers会异常
-    config.data = transRequestData(config)
+    return instance as AxiosInstance
 }
 
-
-// 对config.url做处理
-function transURL(config: AxiosRequestConfig): string {
-    const { url, params } = config
-    return bulidURL(url,params)
-}
-// 对config.data做处理
-function transRequestData(config: AxiosRequestConfig): any {
-    return transRequest(config.data)
-}
-// 对config.headers做处理
-function transHeaders(config: AxiosRequestConfig): any {
-    const { headers = {}, data } = config
-    return processHeaders(headers,data)
-}
-// 对响应数据data做处理
-function transResponseData( response: AxiosResponse): AxiosResponse{
-    response.data = transData(response.data)
-    return response
-}
-
+const axios = createInstance()
 
 export default axios
