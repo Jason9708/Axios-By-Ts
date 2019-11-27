@@ -40,6 +40,11 @@ export interface AxiosError extends Error {
 
 // 描述Axios类中的公共方法
 export interface Axios {
+    interceptors: {
+        request: AxiosInterceptorManager<AxiosRequestConfig>
+        response: AxiosInterceptorManager<AxiosResponse>
+    }
+
     request<T=any>(config: AxiosRequestConfig): AxiosPromise<T>
 
     get<T=any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
@@ -55,4 +60,19 @@ export interface AxiosInstance extends Axios{
     <T=any>(config: AxiosRequestConfig): AxiosPromise<T>
 
     <T=any>(url:string, config?: AxiosRequestConfig): AxiosPromise<T>
+}
+
+// 拦截器管理类
+export interface AxiosInterceptorManager<T> {
+    // 添加
+    use(resolved: ResolvedFun<T>,rejected?: RejectedFun): number
+    // 删除
+    eject(id: number): void
+}
+// 类型接口
+export interface ResolvedFun<T> {
+    (val: T): T | Promise<T>
+}
+export interface RejectedFun {
+    (error: any): any
 }

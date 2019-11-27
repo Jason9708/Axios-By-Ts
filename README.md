@@ -598,3 +598,6 @@ function handleResponse(response: AxiosResponse): void{
     }
 }
 ```
+
+### 拦截器设计
+#### 拦截器管理类实现

@@ -35,6 +35,8 @@ registerErrorRouter()
 
 registerExtendRouter()
 
+registerInterceptorRouter()
+
 function registerSimpleRouter() {
     router.get('/simple/get', function(req, res) {
         res.json({
@@ -128,6 +130,12 @@ function registerExtendRouter() {
     })
 }
 
+
+function registerInterceptorRouter() {
+    router.get('/interceptor/get', function(req, res) {
+        res.end('hello')
+    })
+}
 
 app.use(router)
 
